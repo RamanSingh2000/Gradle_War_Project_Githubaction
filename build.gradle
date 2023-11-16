@@ -11,7 +11,7 @@ plugins {
 // targetCompatibility = 1.8 // Change this to match your desired Java version
 // }
 group = 'com.example'
-version = '0.0.1-SNAPSHOT'
+version = '0.0.1-snapshot'
  // mainClassName = 'java.com.example.Application'
 
 repositories {
