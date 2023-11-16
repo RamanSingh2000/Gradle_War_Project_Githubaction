@@ -53,7 +53,7 @@ jobs:
     - name: Build & push Docker image
       uses: mr-smithers-excellent/docker-build-push@v5
       with:
-        image: ramansingh2000/demo-0.0.1-SNAPSHOT:latest
+        image: ramansingh2000/demo-0.0.1-SNAPSHOT
         tags: latest
         registry: docker.io
         dockerfile: Dockerfile
