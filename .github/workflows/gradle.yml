@@ -31,7 +31,7 @@ jobs:
       with:
         args: 
          -Dsonar.projectKey=gradle-githubactions
-         -Dsonar.java.binaries=build/classes
+         -Dsonar.java.binaries=**/build/**
           
   build:
 
