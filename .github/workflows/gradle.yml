@@ -9,22 +9,7 @@ on:
   
 
 jobs:
-
-  sonarqube:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-      with:
-         fetch-depth: 0
-    
-       
-    - name: SonarQube Scan
-      uses: sonarsource/sonarqube-scan-action@master
-      env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-     
-          
+      
   build:
 
     runs-on: ubuntu-latest
@@ -40,26 +25,26 @@ jobs:
     
     - name: Unit Testing
       run: gradle test
-    # - name: Change wrapper permissions
-    #   run: chmod +x gradlew
-    # - name: Cache SonarQube packages
-    #   uses: actions/cache@v1
-    #   with:
-    #     path: ~/.sonar/cache
-    #     key: ${{ runner.os }}-sonar
-    #     restore-keys: ${{ runner.os }}-sonar
-    # - name: Cache Gradle packages
-    #   uses: actions/cache@v1
-    #   with:
-    #     path: ~/.gradle/caches
-    #     key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
-    #     restore-keys: ${{ runner.os }}-gradle
-    # - name: Build and analyze
-    #   env:
-    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
-    #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-    #     SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-    #   run: ./gradlew build sonar --info
+    - name: Change wrapper permissions
+      run: chmod +x gradlew
+    - name: Cache SonarQube packages
+      uses: actions/cache@v1
+      with:
+        path: ~/.sonar/cache
+        key: ${{ runner.os }}-sonar
+        restore-keys: ${{ runner.os }}-sonar
+    - name: Cache Gradle packages
+      uses: actions/cache@v1
+      with:
+        path: ~/.gradle/caches
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
+        restore-keys: ${{ runner.os }}-gradle
+    - name: Build and analyze
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+      run: ./gradlew build sonar --info
     - name: Build with Gradle
       run: gradle clean build
     - name: Set up Docker Buildx
