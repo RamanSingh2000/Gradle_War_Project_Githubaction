@@ -31,7 +31,7 @@ jobs:
       with:
         args: 
          -Dsonar.projectKey=gradle-githubactions
-         -Dsonar.java.binaries=/usr/lib/jvm/java-17-openjdk-amd64
+         -Dsonar.java.binaries=/opt/hostedtoolcache/Java_Adopt_jdk/17.0.9-9/x64
        
           
   build:
