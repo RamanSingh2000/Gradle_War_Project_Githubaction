@@ -14,8 +14,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
+    - name: Set up JDK 17
+      uses: actions/setup-java@v1
       with:
-        # Disabling shallow clone is recommended for improving relevancy of reporting
+        java-version: '17'
+        distribution: 'adopt'
         fetch-depth: 0
     - name: SonarQube Scan
       uses: sonarsource/sonarqube-scan-action@master
@@ -23,7 +26,11 @@ jobs:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
       with:
-        args: -X -Dsonar.projectKey=gradle 
+        args: >
+          -X
+          -Dsonar.projectKey=gardle_Github actions 
+       
+          
   build:
 
     runs-on: ubuntu-latest
