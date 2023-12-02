@@ -3,8 +3,15 @@
 name: Gradle cicd flow
 
 on:
-  push:
-    branches: [ "main" ]
+  workflow_dispatch:
+    inputs:
+      deployment_type:
+        description: 'Choose deployment type'
+        required: true
+        options:
+        - container
+        - non-container
+        default: 'container'
   
 
 jobs:
@@ -22,28 +29,38 @@ jobs:
         distribution: 'adopt'
         # cache: maven
     
+    - name: Choose Deployment Type
+      id: choose_deployment
+      run: |
+       deployment_type=$(echo -e 'container\nnon-container' | grep -m 1 -i "$(echo "$INPUT_DEPLOYMENT_TYPE" | tr -d '[:space:]')")
+       echo "INPUT_DEPLOYMENT_TYPE: $INPUT_DEPLOYMENT_TYPE"
+       echo "Deployment Type: $deployment_type"
+       echo "::set-output name=DEPLOYMENT_TYPE::$deployment_type"
+      env:
+       INPUT_DEPLOYMENT_TYPE: ${{ github.event.inputs.deployment_type }}
+    
     - name: Unit Testing
       run: gradle test
-    # - name: Change wrapper permissions
-    #   run: chmod +x gradlew
-    # - name: Cache SonarQube packages
-    #   uses: actions/cache@v1
-    #   with:
-    #     path: ~/.sonar/cache
-    #     key: ${{ runner.os }}-sonar
-    #     restore-keys: ${{ runner.os }}-sonar
-    # - name: Cache Gradle packages
-    #   uses: actions/cache@v1
-    #   with:
-    #     path: ~/.gradle/caches
-    #     key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
-    #     restore-keys: ${{ runner.os }}-gradle
-    # - name: Build and analyze
-    #   env:
-    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
-    #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-    #     SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-    #   run: ./gradlew build sonar --info
+    - name: Change wrapper permissions
+      run: chmod +x gradlew
+    - name: Cache SonarQube packages
+      uses: actions/cache@v1
+      with:
+        path: ~/.sonar/cache
+        key: ${{ runner.os }}-sonar
+        restore-keys: ${{ runner.os }}-sonar
+    - name: Cache Gradle packages
+      uses: actions/cache@v1
+      with:
+        path: ~/.gradle/caches
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
+        restore-keys: ${{ runner.os }}-gradle
+    - name: Build and analyze
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+      run: ./gradlew build sonar --info
     - name: Build with Gradle
       run: gradle clean build
 
@@ -58,11 +75,7 @@ jobs:
         coordinates: groupId=DEV artifactId=demo version=1.0.0
         assets: extension=war
         filename: ./build/libs/demo-0.0.1-snapshot.war
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v1
-    - name: Check Docker Version
-      run: docker --version
-
+    
     - name: Depcheck
       uses: dependency-check/Dependency-Check_Action@main
       env:
@@ -101,13 +114,44 @@ jobs:
         ignore-unfixed: true
         vuln-type: 'os,library'
         severity: 'CRITICAL,HIGH'
-  # deploy:
-  #   needs: build
-  #   runs-on: self-hosted
-  #   steps:
-  #     - name: Pull Image from docker hub
-  #       run: sudo docker pull ramansingh2000/demo-0.0.1-SNAPSHOT:latest
-  #     - name: Delete old container
-  #       run:  sudo docker rm -f springboot-example-container
-  #     - name: Run docker container
-  #       run: sudo docker run -d -p 8080:8080 --name springboot-example-container ramansingh2000/demo-0.0.1-SNAPSHOT:latest
+  deploy:
+    needs: build
+    runs-on: self-hosted
+    steps:
+      - name: Retrieve Deployment Type from global env
+        run: |
+         type=${{ needs.build.outputs.DEPLOYMENT_TYPE }}
+         echo "Deployment Type in Deploy Job: $type"
+      - name: Deployment based on Type
+        run: |
+         if [ "$type,," == "container" ]; then
+           echo "Deploying as a container"
+      
+      
+         sudo docker pull ramansingh2000/demo-0.0.1-SNAPSHOT:latest
+      
+         sudo docker rm -f springboot-example-container
+      
+         sudo docker run -d -p 8089:8080 --name springboot-example-container ramansingh2000/demo-0.0.1-SNAPSHOT:latest
+
+
+         elif [ "$type,," == "non-container" ]; then
+         
+          echo "Deploying as a non-container"
+          sudo apt-get install wget -y
+       
+
+          # Example: Download a WAR file from Nexus
+          wget --user=admin --password=admin -O app.war "http://13.232.31.61:8081/repository/devops-maven/QA/devops-integration/${{ github.run_number }}/devops-integration-${{ github.run_number }}.war"
+
+          # Download Tomcat Docker image
+          sudo docker pull tomcat:8
+          sudo docker rm -f my-tomcat
+          # Run Tomcat Docker container on port 8085
+          sudo docker run -d -p 8086:8080 --name my-tomcat tomcat:8
+
+          # Deploy the WAR file to Tomcat
+          sudo docker cp app.war my-tomcat:/usr/local/tomcat/webapps/
+          else
+          echo "Select correct deployment type"
+         fi
